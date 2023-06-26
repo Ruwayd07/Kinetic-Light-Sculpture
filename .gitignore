@@ -1,32 +1,223 @@
-# Prerequisites
-*.d
+// Producers of the code: Ruwayd Raffa & Ethan Applefeld
+// Code production date: March 28, 2023
+// AME240; Kinetic Light Sculpture
+/* Hardware that is needed for this code to run:
+1- LED strip
+2- Stepper Motor
+3- A4988 Driver Module (which connects to both the stepper motor and the microcontroller)
+4- Arduino board
+*/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+// The serial communication code was borrowed from the "Digital Read Serial" example. 
+// Some parts of the LED Configuration were borrowed from the dotStarLED example.
+// Most parts of the stepper code were borrowed from the dotStarStepperMega example.
+// One part of the stepper code was borrowed from https://arduino.stackexchange.com/questions/90943/how-to-count-steps-of-a-stepper-motor-with-accelstepper
 
-# Precompiled Headers
-*.gch
-*.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+// LED Configuration
+#include <FastLED.h>      // Library for efficient LED control.
+#define DATA_PIN 51       // MOSI (Serial Peripheral Interface (SPI) Output pin).
+#define CLOCK_PIN 52      // SCK (Serial Peripheral Interface (SPI) Clock pin).
+#define LED_TYPE DOTSTAR  //APA 102-2020.
+#define COLOR_ORDER BGR   
+const int NUM_LEDS = 10;  // Number of LEDs on LED strip.
+CRGB leds[NUM_LEDS];      // Define the array of LEDs.
+#define Brightness 200    // The maximum brightness of the LED strip is set to 200.
+// End LED Configuration
 
-# Fortran module files
-*.mod
-*.smod
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+// Stepper Configuration
+#include <AccelStepper.h>
+AccelStepper myStepper(1, 15, 14);  // 1 sets the MotorInterfaceType to DRIVER; pin 15 = step; pin 14 = direction.
+// Define microstep pins.
+const int ms1Pin = 20;          
+const int ms2Pin = 19;          
+const int ms3Pin = 18;         
+const int enablePin = 21; 
+// End Stepper Configuration
 
-# Executables
-*.exe
-*.out
-*.app
+// Timer Configuration
+#include <elapsedMillis.h>
+// Set a timer for each LED light on the LED strip.
+elapsedMillis colorTimer0; // Timer for led color change.
+elapsedMillis colorTimer1; // Timer for led color change.
+elapsedMillis colorTimer2; // Timer for led color change.
+elapsedMillis colorTimer3; // Timer for led color change.
+elapsedMillis colorTimer4; // Timer for led color change.
+elapsedMillis colorTimer5; // Timer for led color change.
+elapsedMillis colorTimer6; // Timer for led color change.
+elapsedMillis colorTimer7; // Timer for led color change.
+elapsedMillis colorTimer8; // Timer for led color change.
+elapsedMillis colorTimer9; // Timer for led color change.
+// End Timer Configuration
+
+
+
+
+void setup() {
+  // initialize serial communication at 9600 bits per second:
+Serial.begin(9600);
+  // Tell FastLED about the LED strip configuration.
+  FastLED.addLeds<LED_TYPE, DATA_PIN, CLOCK_PIN, COLOR_ORDER, DATA_RATE_MHZ(12)>(leds, NUM_LEDS).setCorrection(TypicalSMD5050);
+  // Set master brightness level.
+  FastLED.setBrightness(Brightness);
+
+  myStepper.setMaxSpeed(800); // Sets the maximum steps per second, which determines how fast the motor will turn.
+  myStepper.setAcceleration(800); // Sets the acceleration rate in steps per second.
+  myStepper.setSpeed(700);
+
+// Set microstep pins as outputs.
+  pinMode(ms1Pin, OUTPUT);     
+  pinMode(ms2Pin, OUTPUT);
+  pinMode(ms3Pin, OUTPUT);
+  pinMode(enablePin, OUTPUT);
+// Set value for each microstep pin.
+  digitalWrite(ms1Pin, HIGH); 
+  digitalWrite(ms2Pin, LOW);      
+  digitalWrite(ms3Pin, LOW);
+  digitalWrite(enablePin, LOW);
+}
+
+void loop() {
+
+myStepper.runSpeed(); // Tell stepper motor to run at a constant speed (the speed was determined in the void setup() section of the code).
+colorChange(); // Each LED will go through a smooth color change (all colors within the blue spectrum) over the course of six seconds (and then repeat).
+FastLED.show(); // Tell LED strip to display lights.
+
+}
+
+void colorChange() {
+  // Map hue value to timer value for each LED.
+  int led0Value1 = map(colorTimer0, 0, 2999, 180, 120);
+  int led1Value1 = map(colorTimer1, 150, 3149, 180, 120);
+  int led2Value1 = map(colorTimer2, 300, 3299, 180, 120);
+  int led3Value1 = map(colorTimer3, 450, 3449, 180, 120);
+  int led4Value1 = map(colorTimer4, 600, 3599, 180, 120);
+  int led5Value1 = map(colorTimer5, 750, 3749, 180, 120);
+  int led6Value1 = map(colorTimer6, 900, 3899, 180, 120);
+  int led7Value1 = map(colorTimer7, 1050, 4049, 180, 120);
+  int led8Value1 = map(colorTimer8, 1200, 4199, 180, 120);
+  int led9Value1 = map(colorTimer9, 1350, 4349, 180, 120); 
+  int led0Value2 = map(colorTimer0, 3000, 6000, 120, 180);
+  int led1Value2 = map(colorTimer1, 3150, 6150, 120, 180);
+  int led2Value2 = map(colorTimer2, 3300, 6300, 120, 180);
+  int led3Value2 = map(colorTimer3, 3450, 6450, 120, 180);  
+  int led4Value2 = map(colorTimer4, 3600, 6600, 120, 180);
+  int led5Value2 = map(colorTimer5, 3750, 6750, 120, 180);
+  int led6Value2 = map(colorTimer6, 3900, 6900, 120, 180);
+  int led7Value2 = map(colorTimer7, 4050, 7050, 120, 180);
+  int led8Value2 = map(colorTimer8, 4200, 7200, 120, 180);
+  int led9Value2 = map(colorTimer9, 4350, 7350, 120, 180);
+  
+  
+// Each LED will go through a smooth color change (all colors within the blue spectrum) over the course of six seconds (and then repeat).
+//            |||||LED 0|||||||
+    if (colorTimer0 <= 2999){
+  leds[0] = CHSV(led0Value1, 255, 200);
+  }
+  else {
+  leds[0] = CHSV(led0Value2, 255, 200);
+  }
+    if (colorTimer0 >= 6000) {
+    colorTimer0 = 0; // Reset the timer.
+  }
+
+//            |||||LED 1|||||||
+   if (colorTimer1 <= 3149){
+  leds[1] = CHSV(led1Value1, 255, 200);
+  }
+  else {
+  leds[1] = CHSV(led1Value2, 255, 200);
+  }
+    if (colorTimer1 >= 6150) {
+    colorTimer1 = 150; // Reset the timer to 150ms.
+  }
+
+  //            |||||LED 2|||||||
+   if (colorTimer2 <= 3299){
+  leds[2] = CHSV(led2Value1, 255, 200);
+  }
+  else {
+  leds[2] = CHSV(led2Value2, 255, 200);
+  }
+    if (colorTimer2 >= 6300) {
+    colorTimer2 = 300; // Reset the timer to 300ms.
+  }
+
+    //            |||||LED 3|||||||
+   if (colorTimer3 <= 3449){
+  leds[3] = CHSV(led3Value1, 255, 200);
+  }
+  else {
+  leds[3] = CHSV(led3Value2, 255, 200);
+  }
+    if (colorTimer3 >= 6450) {
+    colorTimer3 = 450; // Reset the timer to 450ms.
+  }
+
+    //            |||||LED 4|||||||
+   if (colorTimer4 <= 3599){
+  leds[4] = CHSV(led4Value1, 255, 200);
+  }
+  else {
+  leds[4] = CHSV(led4Value2, 255, 200);
+  }
+    if (colorTimer4 >= 6600) {
+    colorTimer4 = 600; // Reset the timer to 600ms.
+  }
+
+    //            |||||LED 5|||||||
+   if (colorTimer5 <= 3749){
+  leds[5] = CHSV(led5Value1, 255, 200);
+  }
+  else {
+  leds[5] = CHSV(led5Value2, 255, 200);
+  }
+    if (colorTimer5 >= 6750) {
+    colorTimer5 = 750; // Reset the timer to 750ms.
+  }
+
+    //            |||||LED 6|||||||
+   if (colorTimer6 <= 3899){
+  leds[6] = CHSV(led6Value1, 255, 200);
+  }
+  else {
+  leds[6] = CHSV(led6Value2, 255, 200);
+  }
+    if (colorTimer6 >= 6900) {
+    colorTimer6 = 900; // Reset the timer to 900ms.
+  }
+
+    //            |||||LED 7|||||||
+   if (colorTimer7 <= 4049){
+  leds[7] = CHSV(led7Value1, 255, 200);
+  }
+  else {
+  leds[7] = CHSV(led7Value2, 255, 200);
+  }
+    if (colorTimer7 >= 7050) {
+    colorTimer7 = 1050; // Reset the timer to 1050ms.
+  }
+
+    //            |||||LED 8|||||||
+   if (colorTimer8 <= 4199){
+  leds[8] = CHSV(led8Value1, 255, 200);
+  }
+  else {
+  leds[8] = CHSV(led8Value2, 255, 200);
+  }
+    if (colorTimer8 >= 7200) {
+    colorTimer8 = 1200; // Reset the timer to 1200ms.
+  }
+
+    //            |||||LED 9|||||||
+   if (colorTimer9 <= 4349){
+  leds[9] = CHSV(led9Value1, 255, 200);
+  }
+  else {
+  leds[9] = CHSV(led9Value2, 255, 200);
+  }
+    if (colorTimer9 >= 7350) {
+    colorTimer9 = 1350; // Reset the timer to 1350ms.
+  }
+}
